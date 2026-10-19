@@ -1,0 +1,197 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+/*
+ * Crowdwink design tokens.
+ * A warm "paper" base, deep grape ink, and two signature answer colors:
+ * Option A = berry, Option B = sky. Chunky ink outlines + offset shadows give the
+ * playful, tactile party-game feel.
+ */
+:root {
+  --radius: 1.25rem;
+
+  --paper: #fff7ec;
+  --ink: #1d1537;
+  --ink-soft: #4a4166;
+  --grape: #6c4dff;
+  --grape-deep: #5233e6;
+  --berry: #ff6b9a;
+  --berry-soft: #ffd6e3;
+  --sky: #45c4f5;
+  --sky-soft: #d3f1fd;
+  --sun: #ffd23f;
+  --sun-soft: #fff2c2;
+  --mint: #22d39b;
+  --mint-soft: #d2f8ea;
+  --tomato: #ff5a4e;
+
+  /* shadcn/ui semantic tokens */
+  --background: var(--paper);
+  --foreground: var(--ink);
+  --card: #ffffff;
+  --card-foreground: var(--ink);
+  --popover: #ffffff;
+  --popover-foreground: var(--ink);
+  --primary: var(--grape);
+  --primary-foreground: #ffffff;
+  --secondary: var(--sun);
+  --secondary-foreground: var(--ink);
+  --muted: #f3eadc;
+  --muted-foreground: #5e5578;
+  --accent: var(--sky-soft);
+  --accent-foreground: var(--ink);
+  --destructive: #e5372b;
+  --destructive-foreground: #ffffff;
+  --border: var(--ink);
+  --input: var(--ink);
+  --ring: var(--grape);
+}
+
+@theme inline {
+  --font-sans: "Plus Jakarta Sans Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Bricolage Grotesque Variable", "Plus Jakarta Sans Variable", ui-sans-serif, system-ui,
+    sans-serif;
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --color-paper: var(--paper);
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --color-grape: var(--grape);
+  --color-grape-deep: var(--grape-deep);
+  --color-berry: var(--berry);
+  --color-berry-soft: var(--berry-soft);
+  --color-sky: var(--sky);
+  --color-sky-soft: var(--sky-soft);
+  --color-sun: var(--sun);
+  --color-sun-soft: var(--sun-soft);
+  --color-mint: var(--mint);
+  --color-mint-soft: var(--mint-soft);
+  --color-tomato: var(--tomato);
+
+  --radius-sm: calc(var(--radius) - 10px);
+  --radius-md: calc(var(--radius) - 6px);
+  --radius-lg: calc(var(--radius) - 2px);
+  --radius-xl: var(--radius);
+  --radius-2xl: calc(var(--radius) + 4px);
+  --radius-3xl: calc(var(--radius) + 12px);
+
+  --shadow-pop: 4px 4px 0 0 var(--ink);
+  --shadow-pop-sm: 2px 2px 0 0 var(--ink);
+  --shadow-pop-lg: 6px 6px 0 0 var(--ink);
+
+  --animate-wiggle: wiggle 0.5s ease-in-out;
+  --animate-float: float 6s ease-in-out infinite;
+}
+
+@keyframes wiggle {
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+  25% {
+    transform: rotate(-4deg);
+  }
+  75% {
+    transform: rotate(4deg);
+  }
+}
+
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/60;
+  }
+  html {
+    -webkit-tap-highlight-color: transparent;
+  }
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    background-image: radial-gradient(color-mix(in oklab, var(--ink) 9%, transparent) 1px, transparent 1px);
+    background-size: 22px 22px;
+  }
+  h1,
+  h2,
+  h3,
+  .font-display {
+    font-family: var(--font-display);
+    letter-spacing: -0.02em;
+  }
+  :focus-visible {
+    outline: 3px solid var(--grape);
+    outline-offset: 3px;
+  }
+  ::selection {
+    background: var(--sun);
+    color: var(--ink);
+  }
+}
+
+@layer utilities {
+  .pop {
+    border: 2.5px solid var(--ink);
+    box-shadow: var(--shadow-pop);
+  }
+  .pop-sm {
+    border: 2px solid var(--ink);
+    box-shadow: var(--shadow-pop-sm);
+  }
+  .pop-lg {
+    border: 3px solid var(--ink);
+    box-shadow: var(--shadow-pop-lg);
+  }
+  .pressable {
+    transition:
+      transform 120ms ease,
+      box-shadow 120ms ease;
+  }
+  .pressable:hover:not(:disabled) {
+    transform: translate(-1px, -1px);
+    box-shadow: 5px 5px 0 0 var(--ink);
+  }
+  .pressable:active:not(:disabled) {
+    transform: translate(3px, 3px);
+    box-shadow: 1px 1px 0 0 var(--ink);
+  }
+  .safe-bottom {
+    padding-bottom: max(1rem, env(safe-area-inset-bottom));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
