@@ -16,13 +16,14 @@ import {
 } from "@/components/ui/dialog";
 import { questionsIn } from "@/data/questions";
 import { MAX_PLAYERS, MIN_PLAYERS } from "@/lib/game/constants";
+import { MODE_INFO } from "@/lib/game/modes";
 import type { PlayerView, RoomView } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { Avatar } from "./avatar";
 import { BottomBar } from "./bottom-bar";
 import type { Act } from "./game-room";
 import { InviteCard } from "./invite-card";
-import { CategoryPicker, describeCategories, RoundsPicker } from "./settings-controls";
+import { CategoryPicker, describeCategories, ModePicker, RoundsPicker } from "./settings-controls";
 
 const LOBBY_LINES = [
   "Warming up the crowd…",
@@ -147,6 +148,16 @@ export function Lobby({ view, act, isOnline }: { view: RoomView; act: Act; isOnl
         {me.isHost ? (
           <>
             <div className="flex flex-col gap-2">
+              <span id="lobby-mode-label" className="text-sm font-bold">
+                Game mode
+              </span>
+              <ModePicker
+                id="lobby-mode"
+                value={settings.mode}
+                onChange={(mode) => void act({ type: "settings", settings: { mode } })}
+              />
+            </div>
+            <div className="flex flex-col gap-2">
               <span id="lobby-rounds-label" className="text-sm font-bold">
                 Rounds
               </span>
@@ -171,6 +182,13 @@ export function Lobby({ view, act, isOnline }: { view: RoomView; act: Act; isOnl
           </>
         ) : (
           <dl className="grid gap-3 sm:grid-cols-2">
+            <div className={cn("rounded-2xl p-3 sm:col-span-2", settings.mode === "minority" ? "bg-berry-soft" : "bg-mint-soft")}>
+              <dt className="text-xs font-bold tracking-wide text-ink-soft uppercase">Game mode</dt>
+              <dd className="font-display text-2xl font-extrabold">
+                <span aria-hidden>{MODE_INFO[settings.mode].emoji}</span> {MODE_INFO[settings.mode].label}
+              </dd>
+              <dd className="font-semibold text-ink-soft">{MODE_INFO[settings.mode].rule}</dd>
+            </div>
             <div className="rounded-2xl bg-sun-soft p-3">
               <dt className="text-xs font-bold tracking-wide text-ink-soft uppercase">Rounds</dt>
               <dd className="font-display text-2xl font-extrabold">{settings.rounds}</dd>

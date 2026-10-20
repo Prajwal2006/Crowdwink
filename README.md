@@ -22,7 +22,14 @@ Crowdwink is a free multiplayer party game for 2–8 friends. Each round everyon
 | Leaderboard | Rankings, points, accuracy and rank changes. The host starts the next round. |
 | Final | Winner celebration, podium, closest rivals, shareable results card (PNG), rematch. |
 
-**Scoring:** +1 for correctly predicting the majority, 0 otherwise. An exact tie means nobody scores that round. Accuracy = correct predictions ÷ predictions made in rounds that had a majority. Standings are by total points; equal points share a rank.
+**Modes:** the host picks one when creating the room (and can switch it in the lobby between games).
+
+- **Read the room** (default): predict the option *most* of the room picked.
+- **Underdog**: predict the option *fewer* people picked.
+
+The mode is stored in `rooms.settings.mode` (rooms created before modes existed play "Read the room"). Rounds always record the majority option as `round_results.winner`; `scoringOption()` in `src/lib/game/scoring.ts` flips it for Underdog mode.
+
+**Scoring:** +1 for correctly predicting the majority (or the minority in Underdog mode), 0 otherwise. An exact tie means nobody scores that round. Accuracy = correct predictions ÷ predictions made in rounds that had a majority. Standings are by total points; equal points share a rank.
 
 All scoring happens on the server inside a database transaction. Clients only ever send "I vote A" or "I predict B".
 

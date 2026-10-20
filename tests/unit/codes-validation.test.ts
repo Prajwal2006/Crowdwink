@@ -54,6 +54,10 @@ describe("validation", () => {
     expect(createRoomSchema.safeParse({ nickname: "A", categories: ["nope"] }).success).toBe(false);
     expect(createRoomSchema.safeParse({ nickname: "A", rounds: 0 }).success).toBe(false);
     expect(createRoomSchema.safeParse({ nickname: "A", rounds: 99 }).success).toBe(false);
+    expect(createRoomSchema.safeParse({ nickname: "A", mode: "minority" }).success).toBe(true);
+    expect(createRoomSchema.safeParse({ nickname: "A", mode: "chaos" }).success).toBe(false);
+    expect(actionSchema.safeParse({ type: "settings", settings: { mode: "minority" } }).success).toBe(true);
+    expect(actionSchema.safeParse({ type: "settings", settings: { mode: "chaos" } }).success).toBe(false);
   });
   it("does not accept client-supplied scores in actions", () => {
     const parsed = actionSchema.safeParse({ type: "vote", choice: "a", score: 100 });

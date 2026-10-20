@@ -53,7 +53,8 @@ export function FinalResults({ view, act, onLeave }: { view: RoomView; act: Act;
         <h1 className="font-display text-4xl leading-tight font-extrabold text-balance sm:text-5xl">{headline}</h1>
         {winners.length > 0 && (
           <p className="text-lg font-semibold text-ink-soft">
-            Read the room best with {winners[0]!.score}{" "}
+            {view.room.settings.mode === "minority" ? "Spotted the most underdogs" : "Read the room best"} with{" "}
+            {winners[0]!.score}{" "}
             {winners[0]!.score === 1 ? "point" : "points"} and {winners[0]!.accuracy}% accuracy.
           </p>
         )}

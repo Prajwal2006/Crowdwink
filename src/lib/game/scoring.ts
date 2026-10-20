@@ -1,11 +1,14 @@
 /**
  * Pure, deterministic scoring rules. No I/O here so it is easy to test.
  *
- * - Each player votes for A or B and predicts which option gets more votes.
+ * - Each player votes for A or B and predicts which option gets more votes
+ *   (or, in minority mode, fewer votes).
  * - The majority is computed from every submitted vote, including your own.
  * - Correct prediction: +1 point. Wrong or missing prediction: 0.
  * - Exact tie: nobody scores that round.
  */
+import { DEFAULT_MODE, type GameMode } from "./modes";
+
 export type Choice = "a" | "b";
 export type Outcome = Choice | "tie";
 
@@ -29,9 +32,23 @@ export function tallyVotes(votes: readonly VoteRow[]): Tally {
   return { votesA, votesB, winner };
 }
 
-export function pointsFor(prediction: Choice | null | undefined, winner: Outcome): number {
-  if (!prediction || winner === "tie") return 0;
-  return prediction === winner ? 1 : 0;
+/**
+ * The option a prediction must match to score. `winner` is always the majority
+ * option; minority mode flips it. A tie stays a tie in both modes.
+ */
+export function scoringOption(winner: Outcome, mode: GameMode = DEFAULT_MODE): Outcome {
+  if (winner === "tie" || mode === "majority") return winner;
+  return winner === "a" ? "b" : "a";
+}
+
+export function pointsFor(
+  prediction: Choice | null | undefined,
+  winner: Outcome,
+  mode: GameMode = DEFAULT_MODE,
+): number {
+  const target = scoringOption(winner, mode);
+  if (!prediction || target === "tie") return 0;
+  return prediction === target ? 1 : 0;
 }
 
 export type Award = {
@@ -42,10 +59,14 @@ export type Award = {
   counted: boolean;
 };
 
-export function scoreRound(votes: readonly VoteRow[], predictions: readonly PredictionRow[]) {
+export function scoreRound(
+  votes: readonly VoteRow[],
+  predictions: readonly PredictionRow[],
+  mode: GameMode = DEFAULT_MODE,
+) {
   const tally = tallyVotes(votes);
   const awards: Award[] = predictions.map((p) => {
-    const points = pointsFor(p.predicted, tally.winner);
+    const points = pointsFor(p.predicted, tally.winner, mode);
     return {
       playerId: p.playerId,
       points,

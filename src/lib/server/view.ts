@@ -14,7 +14,8 @@ import {
 import { getQuestion, type CategoryId } from "@/data/questions";
 import { tokenMatches } from "@/lib/game/codes";
 import { MAX_PLAYERS } from "@/lib/game/constants";
-import { closestRivals, percent, pointsFor, rankPlayers } from "@/lib/game/scoring";
+import { modeOf } from "@/lib/game/modes";
+import { closestRivals, percent, pointsFor, rankPlayers, scoringOption } from "@/lib/game/scoring";
 import type { LeaderboardRow, PlayerView, RoomPreview, RoomView, RoundView } from "@/lib/types";
 import type { PlayerAuth } from "./auth";
 import { Errors } from "./errors";
@@ -62,6 +63,8 @@ export async function getView(code: string, auth: PlayerAuth): Promise<RoomView>
 
   // Resolve an expired timer before showing anything.
   if (await tickIfDue(code, auth, room)) room = await loadRoom(code);
+  // Settings only change in the lobby, so this is the mode the current game is played in.
+  const mode = modeOf(room.settings);
 
   const now = Date.now();
   if (now - me.lastSeenAt.getTime() > LAST_SEEN_WRITE_INTERVAL_MS) {
@@ -117,9 +120,10 @@ export async function getView(code: string, auth: PlayerAuth): Promise<RoomView>
             votesA: result.votesA,
             votesB: result.votesB,
             winner: result.winner,
+            target: scoringOption(result.winner, mode),
             entries: roster.map((p) => {
               const prediction = predictionBy.get(p.id) ?? null;
-              const points = pointsFor(prediction, result.winner);
+              const points = pointsFor(prediction, result.winner, mode);
               return {
                 playerId: p.id,
                 nickname: p.nickname,
@@ -214,6 +218,7 @@ export async function getView(code: string, auth: PlayerAuth): Promise<RoomView>
         name: room.settings.name,
         rounds: room.settings.rounds,
         categories: room.settings.categories as CategoryId[],
+        mode,
       },
       gameNumber: room.gameNumber,
       currentRound: room.currentRound,

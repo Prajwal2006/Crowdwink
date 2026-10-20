@@ -1,5 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { closestRivals, percent, pointsFor, rankPlayers, scoreRound, tallyVotes } from "@/lib/game/scoring";
+import { modeOf } from "@/lib/game/modes";
+import {
+  closestRivals,
+  percent,
+  pointsFor,
+  rankPlayers,
+  scoreRound,
+  scoringOption,
+  tallyVotes,
+} from "@/lib/game/scoring";
 
 describe("tallyVotes", () => {
   it("picks the option with more votes", () => {
@@ -97,5 +106,48 @@ describe("percent", () => {
   it("rounds and handles zero totals", () => {
     expect(percent(1, 3)).toBe(33);
     expect(percent(0, 0)).toBe(0);
+  });
+});
+
+describe("minority (Underdog) mode", () => {
+  it("scores the option fewer people picked", () => {
+    expect(scoringOption("a", "minority")).toBe("b");
+    expect(scoringOption("b", "minority")).toBe("a");
+    expect(pointsFor("b", "a", "minority")).toBe(1);
+    expect(pointsFor("a", "a", "minority")).toBe(0);
+  });
+  it("still scores nobody on a tie", () => {
+    expect(scoringOption("tie", "minority")).toBe("tie");
+    expect(pointsFor("a", "tie", "minority")).toBe(0);
+    expect(pointsFor("b", "tie", "minority")).toBe(0);
+  });
+  it("awards 0 when no prediction was made", () => expect(pointsFor(null, "a", "minority")).toBe(0));
+  it("keeps the majority as the recorded winner but flips who scores", () => {
+    // 4 vote Pizza (a), 2 vote Tacos (b). Tacos is the underdog pick.
+    const votes = [
+      { playerId: "p1", choice: "a" as const },
+      { playerId: "p2", choice: "a" as const },
+      { playerId: "p3", choice: "a" as const },
+      { playerId: "p4", choice: "a" as const },
+      { playerId: "p5", choice: "b" as const },
+      { playerId: "p6", choice: "b" as const },
+    ];
+    const predictions = [
+      { playerId: "p1", predicted: "b" as const },
+      { playerId: "p5", predicted: "a" as const },
+    ];
+    const minority = scoreRound(votes, predictions, "minority");
+    expect(minority.winner).toBe("a");
+    expect(minority.awards).toEqual([
+      { playerId: "p1", points: 1, correct: true, counted: true },
+      { playerId: "p5", points: 0, correct: false, counted: true },
+    ]);
+    const majority = scoreRound(votes, predictions);
+    expect(majority.awards.map((a) => a.points)).toEqual([0, 1]);
+  });
+  it("defaults rooms without a stored mode to the original game", () => {
+    expect(modeOf({})).toBe("majority");
+    expect(modeOf({ mode: "minority" })).toBe("minority");
+    expect(modeOf({ mode: "bogus" })).toBe("majority");
   });
 });

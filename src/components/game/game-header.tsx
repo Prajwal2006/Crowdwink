@@ -78,7 +78,7 @@ export function GameHeader({
 
         <div className="ml-auto flex items-center gap-2">
           <ConnectionPill state={connection} />
-          <HelpSheet />
+          <HelpSheet mode={room.settings.mode} />
           <Dialog>
             <DialogTrigger asChild>
               <Button variant="outline" size="icon-sm" aria-label="Leave room">

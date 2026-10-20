@@ -28,6 +28,7 @@ import {
   ROOM_TTL_MS,
   STALL_WINDOW_MS,
 } from "@/lib/game/constants";
+import { modeOf, type GameMode } from "@/lib/game/modes";
 import { pickQuestion } from "@/lib/game/questions";
 import { rankPlayers, scoreRound } from "@/lib/game/scoring";
 import type { GameAction, JoinResponse } from "@/lib/types";
@@ -130,6 +131,7 @@ function normalizeSettings(input: Partial<RoomSettings>, fallbackName: string): 
     rounds: input.rounds ?? DEFAULT_ROUNDS,
     // Selecting every category is the same as "all"; store it as [] to keep it simple.
     categories: categories.length === CATEGORY_IDS.length ? [] : categories,
+    mode: modeOf(input),
   };
 }
 
@@ -140,6 +142,7 @@ export async function createRoom(input: {
   name?: string;
   rounds?: number;
   categories?: string[];
+  mode?: GameMode;
 }): Promise<JoinResponse> {
   const settings = normalizeSettings(input, `${input.nickname}'s crowd`);
   const problem = assertEnoughQuestions(settings.categories, settings.rounds);
@@ -259,7 +262,8 @@ async function finalizeRound(tx: Tx, roundId: string): Promise<boolean> {
     .innerJoin(players, eq(players.id, predictions.playerId))
     .where(and(eq(predictions.roundId, roundId), isNull(players.removedAt)));
 
-  const outcome = scoreRound(voteRows, predictionRows);
+  const [room] = await tx.select({ settings: rooms.settings }).from(rooms).where(eq(rooms.id, round.roomId));
+  const outcome = scoreRound(voteRows, predictionRows, modeOf(room?.settings ?? {}));
 
   for (const award of outcome.awards) {
     if (!award.points && !award.counted) continue;

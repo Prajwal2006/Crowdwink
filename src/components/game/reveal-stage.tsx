@@ -4,6 +4,7 @@ import { motion, useReducedMotion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 import { ArrowRight, Check, Crown, Flag, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import type { GameMode } from "@/lib/game/modes";
 import { percent } from "@/lib/game/scoring";
 import type { Choice, RoomView, RoundView } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -81,13 +82,13 @@ export function RevealStage({ view, round, act }: { view: RoomView; round: Round
                 label={round.question[o]}
                 votes={o === "a" ? results.votesA : results.votesB}
                 total={total}
-                winner={results.winner === o}
+                highlight={results.target === o ? (view.room.settings.mode === "minority" ? "underdog" : "crowd") : null}
                 delay={reduce ? 0 : 0.3 + i * 0.15}
               />
             ))}
           </div>
 
-          <OutcomeBanner winner={results.winner} mine={mine} labels={round.question} />
+          <OutcomeBanner target={results.target} mode={view.room.settings.mode} mine={mine} labels={round.question} />
 
           <ul className="flex flex-col gap-2" aria-label="Everyone's answers">
             {results.entries.map((e, i) => (
@@ -123,7 +124,7 @@ export function RevealStage({ view, round, act }: { view: RoomView; round: Round
                   )}
                   aria-label={e.points > 0 ? "Correct, plus one point" : "No points"}
                 >
-                  {e.points > 0 ? <Check className="size-4" strokeWidth={3} /> : results.winner !== "tie" && e.prediction ? <X className="size-4" strokeWidth={3} /> : null}
+                  {e.points > 0 ? <Check className="size-4" strokeWidth={3} /> : results.target !== "tie" && e.prediction ? <X className="size-4" strokeWidth={3} /> : null}
                   +{e.points}
                 </span>
               </motion.li>
@@ -177,21 +178,22 @@ function ResultBar({
   label,
   votes,
   total,
-  winner,
+  highlight,
   delay,
 }: {
   option: Choice;
   label: string;
   votes: number;
   total: number;
-  winner: boolean;
+  /** Marks the option that scored this round. */
+  highlight: "crowd" | "underdog" | null;
   delay: number;
 }) {
   const s = OPTION_STYLE[option];
   const pct = percent(votes, total);
   return (
     <div
-      className={cn("relative overflow-hidden rounded-3xl pop", s.soft, winner && "ring-4 ring-sun ring-offset-2 ring-offset-paper")}
+      className={cn("relative overflow-hidden rounded-3xl pop", s.soft, highlight && "ring-4 ring-sun ring-offset-2 ring-offset-paper")}
     >
       <motion.div
         className={cn("absolute inset-y-0 left-0", s.bg)}
@@ -210,14 +212,22 @@ function ResultBar({
             {votes} {votes === 1 ? "vote" : "votes"}
           </span>
         </span>
-        {winner && (
+        {highlight && (
           <motion.span
             initial={{ scale: 0, rotate: -30 }}
             animate={{ scale: 1, rotate: -8 }}
             transition={{ delay: delay + 1, type: "spring", stiffness: 300, damping: 12 }}
             className="hidden items-center gap-1 rounded-full border-2 border-ink bg-sun px-2.5 py-1 text-xs font-extrabold sm:inline-flex"
           >
-            <Crown className="size-3.5" /> Crowd&apos;s pick
+            {highlight === "underdog" ? (
+              <>
+                <span aria-hidden>🦄</span> Underdog pick
+              </>
+            ) : (
+              <>
+                <Crown className="size-3.5" /> Crowd&apos;s pick
+              </>
+            )}
           </motion.span>
         )}
         <span className="font-display text-3xl font-extrabold tabular-nums">{pct}%</span>
@@ -241,32 +251,40 @@ function ChoiceChip({ choice, labels }: { choice: Choice | null; labels: { a: st
 }
 
 function OutcomeBanner({
-  winner,
+  target,
+  mode,
   mine,
   labels,
 }: {
-  winner: "a" | "b" | "tie";
+  /** The option that scored: the crowd's pick, or the underdog's in minority mode. */
+  target: "a" | "b" | "tie";
+  mode: GameMode;
   mine: { prediction: Choice | null; correct: boolean } | undefined;
   labels: { a: string; b: string };
 }) {
   let tone = "bg-card";
   let emoji = "🤔";
   let text: string;
-  if (winner === "tie") {
+  const underdog = mode === "minority";
+  if (target === "tie") {
     tone = "bg-sun";
     emoji = "🤝";
     text = "Dead even! It's a tie, so nobody scores this round.";
   } else if (!mine?.prediction) {
     emoji = "⏰";
-    text = `You didn't predict in time. The crowd picked "${labels[winner]}".`;
+    text = underdog
+      ? `You didn't predict in time. Fewer people picked "${labels[target]}".`
+      : `You didn't predict in time. The crowd picked "${labels[target]}".`;
   } else if (mine.correct) {
     tone = "bg-mint";
     emoji = "🎯";
-    text = "You read the room! +1 point";
+    text = underdog ? "You spotted the underdog! +1 point" : "You read the room! +1 point";
   } else {
     tone = "bg-berry-soft";
     emoji = "🙃";
-    text = `The crowd zigged when you zagged. They picked "${labels[winner]}".`;
+    text = underdog
+      ? `Not quite! The underdog pick was "${labels[target]}".`
+      : `The crowd zigged when you zagged. They picked "${labels[target]}".`;
   }
   return (
     <motion.p

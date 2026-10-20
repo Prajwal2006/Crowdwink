@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { CATEGORY_IDS, questionsIn, type CategoryId } from "@/data/questions";
 import { MAX_ROUNDS, NICKNAME_MAX, ROOM_NAME_MAX } from "@/lib/game/constants";
+import { GAME_MODES } from "@/lib/game/modes";
 
 /** Letters, numbers, marks, emoji and a few friendly punctuation characters. */
 const DISPLAY_TEXT = /^[\p{L}\p{N}\p{M}\p{Extended_Pictographic}‍️ _.'!?&-]+$/u;
@@ -37,11 +38,14 @@ export const categoriesSchema = z
 
 export const roundsSchema = z.number().int().min(1).max(MAX_ROUNDS);
 
+export const modeSchema = z.enum(GAME_MODES);
+
 export const createRoomSchema = z.object({
   nickname: nicknameSchema,
   name: roomNameSchema.optional(),
   rounds: roundsSchema.optional(),
   categories: categoriesSchema.optional(),
+  mode: modeSchema.optional(),
 });
 
 export const joinRoomSchema = z.object({ nickname: nicknameSchema });
@@ -54,7 +58,7 @@ export const actionSchema = z.discriminatedUnion("type", [
   z.object({
     type: z.literal("settings"),
     settings: z
-      .object({ name: roomNameSchema, rounds: roundsSchema, categories: categoriesSchema })
+      .object({ name: roomNameSchema, rounds: roundsSchema, categories: categoriesSchema, mode: modeSchema })
       .partial(),
   }),
   z.object({ type: z.literal("kick"), playerId: z.uuid() }),

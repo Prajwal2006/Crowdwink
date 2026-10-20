@@ -1,4 +1,7 @@
 import type { CategoryId } from "@/data/questions";
+import type { GameMode } from "@/lib/game/modes";
+
+export type { GameMode };
 
 export type Choice = "a" | "b";
 export type Outcome = Choice | "tie";
@@ -9,6 +12,7 @@ export type RoomSettingsView = {
   name: string;
   rounds: number;
   categories: CategoryId[];
+  mode: GameMode;
 };
 
 export type PlayerView = {
@@ -49,7 +53,10 @@ export type RoundView = {
   results: null | {
     votesA: number;
     votesB: number;
+    /** The option most people picked. */
     winner: Outcome;
+    /** The option a prediction had to match to score: `winner`, flipped in minority mode. */
+    target: Outcome;
     entries: RoundEntry[];
   };
 };

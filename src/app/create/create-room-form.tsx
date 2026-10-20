@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { ChevronDown, Loader2, Rocket, Settings2 } from "lucide-react";
-import { CategoryPicker, RoundsPicker } from "@/components/game/settings-controls";
+import { CategoryPicker, ModePicker, RoundsPicker } from "@/components/game/settings-controls";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,6 +11,7 @@ import { questionsIn, type CategoryId } from "@/data/questions";
 import { api, ApiError } from "@/lib/client/api";
 import { saveIdentity } from "@/lib/client/identity";
 import { DEFAULT_ROUNDS, NICKNAME_MAX, ROOM_NAME_MAX } from "@/lib/game/constants";
+import { DEFAULT_MODE, type GameMode } from "@/lib/game/modes";
 import type { JoinResponse } from "@/lib/types";
 
 export function CreateRoomForm() {
@@ -19,6 +20,7 @@ export function CreateRoomForm() {
   const [name, setName] = useState("");
   const [rounds, setRounds] = useState(DEFAULT_ROUNDS);
   const [categories, setCategories] = useState<CategoryId[]>([]);
+  const [gameMode, setGameMode] = useState<GameMode>(DEFAULT_MODE);
   const [customize, setCustomize] = useState(false);
   const [busy, setBusy] = useState<"quick" | "custom" | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -41,8 +43,8 @@ export function CreateRoomForm() {
     try {
       const body =
         mode === "quick"
-          ? { nickname }
-          : { nickname, name: name || undefined, rounds, categories };
+          ? { nickname, mode: gameMode }
+          : { nickname, name: name || undefined, rounds, categories, mode: gameMode };
       const res = await api<JoinResponse>("/api/rooms", { body });
       saveIdentity({ code: res.code, playerId: res.playerId, token: res.token, nickname: res.nickname });
       router.push(`/r/${res.code}`);
@@ -72,6 +74,13 @@ export function CreateRoomForm() {
           autoFocus
           className="h-14 text-lg"
         />
+      </div>
+
+      <div className="flex flex-col gap-2">
+        <span id="mode-label" className="text-sm font-bold">
+          Game mode
+        </span>
+        <ModePicker value={gameMode} onChange={setGameMode} />
       </div>
 
       {!customize && (

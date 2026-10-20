@@ -6,6 +6,7 @@ import { Eye, Loader2, Lock, Timer } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { getCategory } from "@/data/questions";
+import { MODE_INFO, type GameMode } from "@/lib/game/modes";
 import type { Choice, RoomView, RoundView } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { AnswerCard, Tag } from "./answer-card";
@@ -82,6 +83,11 @@ export function QuestionStage({
               <span aria-hidden>{category.emoji}</span> {category.label}
             </Badge>
           )}
+          {view.room.settings.mode === "minority" && (
+            <Badge variant="berry">
+              <span aria-hidden>{MODE_INFO.minority.emoji}</span> {MODE_INFO.minority.label} mode
+            </Badge>
+          )}
         </div>
         <span
           className={cn(
@@ -113,9 +119,9 @@ export function QuestionStage({
           transition={{ duration: 0.22 }}
           className="flex flex-col gap-4"
         >
-          <StepHeader step={step} />
+          <StepHeader step={step} mode={view.room.settings.mode} />
           {step === "wait" ? (
-            <LockedIn round={round} />
+            <LockedIn round={round} mode={view.room.settings.mode} />
           ) : (
             <div className="grid gap-4 sm:grid-cols-2">
               {(["a", "b"] as const).map((o) => (
@@ -189,10 +195,10 @@ export function QuestionStage({
   );
 }
 
-function StepHeader({ step }: { step: Step }) {
+function StepHeader({ step, mode }: { step: Step; mode: GameMode }) {
   const steps = [
     { id: "vote", label: "Your answer" },
-    { id: "predict", label: "Predict the crowd" },
+    { id: "predict", label: mode === "minority" ? "Predict the underdog" : "Predict the crowd" },
     { id: "wait", label: "Reveal" },
   ];
   const index = steps.findIndex((s) => s.id === step);
@@ -220,14 +226,14 @@ function StepHeader({ step }: { step: Step }) {
       )}
       {step === "predict" && (
         <p className="text-lg font-semibold text-ink-soft">
-          Now, which will <b className="text-ink">most of the room</b> pick? Your vote counts too.
+          Now, which will <b className="text-ink">{MODE_INFO[mode].target}</b> pick? Your vote counts too.
         </p>
       )}
     </div>
   );
 }
 
-function LockedIn({ round }: { round: RoundView }) {
+function LockedIn({ round, mode }: { round: RoundView; mode: GameMode }) {
   const vote = round.myVote!;
   const prediction = round.myPrediction!;
   return (
@@ -246,7 +252,7 @@ function LockedIn({ round }: { round: RoundView }) {
           You picked: {round.question[vote]}
         </span>
         <span className={cn("rounded-full border-2 border-ink px-3 py-1", prediction === "a" ? "bg-berry" : "bg-sky")}>
-          Crowd will pick: {round.question[prediction]}
+          {mode === "minority" ? "Fewer will pick" : "Crowd will pick"}: {round.question[prediction]}
         </span>
       </div>
     </motion.div>

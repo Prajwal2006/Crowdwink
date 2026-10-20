@@ -3,6 +3,7 @@
 import { Check } from "lucide-react";
 import { CATEGORIES, countByCategory, type CategoryId } from "@/data/questions";
 import { ROUND_OPTIONS } from "@/lib/game/constants";
+import { GAME_MODES, MODE_INFO, type GameMode } from "@/lib/game/modes";
 import { cn } from "@/lib/utils";
 
 const counts = countByCategory();
@@ -36,6 +37,60 @@ export function RoundsPicker({
             )}
           >
             {n}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+export function ModePicker({
+  value,
+  onChange,
+  disabled,
+  id = "mode",
+}: {
+  value: GameMode;
+  onChange: (mode: GameMode) => void;
+  disabled?: boolean;
+  id?: string;
+}) {
+  return (
+    <div role="radiogroup" aria-labelledby={`${id}-label`} className="grid gap-2 sm:grid-cols-2">
+      {GAME_MODES.map((mode) => {
+        const info = MODE_INFO[mode];
+        const active = mode === value;
+        return (
+          <button
+            key={mode}
+            type="button"
+            role="radio"
+            aria-checked={active}
+            disabled={disabled}
+            onClick={() => onChange(mode)}
+            className={cn(
+              "flex items-start gap-3 rounded-2xl p-3 text-left pop-sm pressable",
+              active ? (mode === "majority" ? "bg-sky-soft" : "bg-berry-soft") : "bg-card",
+            )}
+          >
+            <span className="text-3xl leading-none" aria-hidden>
+              {info.emoji}
+            </span>
+            <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+              <span className="flex items-center justify-between gap-2 font-display text-lg leading-tight font-extrabold">
+                {info.label}
+                <span
+                  aria-hidden
+                  className={cn(
+                    "flex size-6 shrink-0 items-center justify-center rounded-full border-2 border-ink",
+                    active ? "bg-ink text-white" : "bg-card",
+                  )}
+                >
+                  {active && <Check className="size-3.5" strokeWidth={3} />}
+                </span>
+              </span>
+              <span className="text-sm font-semibold text-ink-soft">{info.rule}</span>
+            </span>
           </button>
         );
       })}

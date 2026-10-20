@@ -7,6 +7,7 @@ import { SiteFooter, SiteHeader } from "@/components/site-header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CATEGORIES, QUESTIONS } from "@/data/questions";
+import { GAME_MODES, MODE_INFO } from "@/lib/game/modes";
 
 const STEPS = [
   {
@@ -125,7 +126,7 @@ export default function Home() {
           <ul className="grid gap-3 sm:grid-cols-3">
             <li className="rounded-3xl bg-mint p-5 pop">
               <p className="font-display text-5xl font-extrabold">+1</p>
-              <p className="mt-1 font-bold">Correctly predict the majority</p>
+              <p className="mt-1 font-bold">Correctly predict the majority (or the minority in Underdog mode)</p>
             </li>
             <li className="rounded-3xl bg-card p-5 pop">
               <p className="font-display text-5xl font-extrabold">0</p>
@@ -135,6 +136,32 @@ export default function Home() {
               <p className="font-display text-5xl font-extrabold">🤝</p>
               <p className="mt-1 font-bold">Perfect tie? Nobody scores that round</p>
             </li>
+          </ul>
+        </section>
+
+        {/* Modes */}
+        <section aria-labelledby="modes-title">
+          <h2 id="modes-title" className="font-display text-4xl font-extrabold sm:text-5xl">
+            Two ways to play
+          </h2>
+          <p className="mt-2 text-lg font-medium text-ink-soft">The host picks a mode when creating the room.</p>
+          <ul className="mt-8 grid gap-4 sm:grid-cols-2">
+            {GAME_MODES.map((mode) => (
+              <li
+                key={mode}
+                className={`flex flex-col gap-2 rounded-3xl p-5 pop ${mode === "minority" ? "bg-berry-soft" : "bg-sky-soft"}`}
+              >
+                <span className="text-4xl" aria-hidden>
+                  {MODE_INFO[mode].emoji}
+                </span>
+                <h3 className="font-display text-2xl font-extrabold">{MODE_INFO[mode].label}</h3>
+                <p className="font-medium text-ink-soft">
+                  {mode === "minority"
+                    ? "Flip it around: guess which answer FEWER people picked. Spot the odd one out to score."
+                    : "The classic: guess which answer MOST of the room picked. Read the room to score."}
+                </p>
+              </li>
+            ))}
           </ul>
         </section>
 

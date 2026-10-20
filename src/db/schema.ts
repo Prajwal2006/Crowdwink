@@ -1,4 +1,5 @@
 import { sql } from "drizzle-orm";
+import type { GameMode } from "@/lib/game/modes";
 import {
   type AnyPgColumn,
   boolean,
@@ -28,6 +29,8 @@ export type RoomSettings = {
   rounds: number;
   /** Question category ids. Empty means "all categories". */
   categories: string[];
+  /** Scoring mode. Missing on rooms created before modes existed: read it with `modeOf`. */
+  mode?: GameMode;
 };
 
 export type StandingSnapshot = {
