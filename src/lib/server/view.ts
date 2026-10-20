@@ -227,7 +227,7 @@ export async function getView(code: string, auth: PlayerAuth): Promise<RoomView>
   };
 }
 
-/** Used by the realtime auth endpoint to confirm a player belongs to a room. */
+/** Used by the realtime auth and version endpoints to confirm a player belongs to a room. */
 export async function verifyMembership(code: string, auth: PlayerAuth) {
   const db = getDb();
   const room = await loadRoom(code);
@@ -236,7 +236,7 @@ export async function verifyMembership(code: string, auth: PlayerAuth) {
     .from(players)
     .where(and(eq(players.id, auth.playerId), eq(players.roomId, room.id), isNull(players.removedAt)));
   if (!me || !tokenMatches(auth.token, me.tokenHash)) throw Errors.unauthorized();
-  return { playerId: me.id, nickname: me.nickname };
+  return { playerId: me.id, nickname: me.nickname, version: room.version };
 }
 
 export async function getSummary(code: string, gameNumber: number) {

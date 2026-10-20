@@ -6,7 +6,7 @@ Crowdwink is a free multiplayer party game for 2–8 friends. Each round everyon
 
 - **Next.js 16** (App Router, TypeScript) + **Tailwind CSS 4** + **shadcn/ui** components
 - **Neon PostgreSQL** + **Drizzle ORM** (schema and SQL migrations in `drizzle/`)
-- **Pusher Channels** for real-time sync (a built-in Server-Sent Events fallback covers single-server hosting and local dev)
+- **Pusher Channels** for real-time sync (without it: Server-Sent Events on a single server and in local dev, short polling on Vercel)
 - 169 hand-written questions across 10 categories, stored in `src/data/questions/`
 
 ---
@@ -87,6 +87,8 @@ All configuration is via environment variables. See [`.env.example`](.env.exampl
 | `CRON_SECRET` | prod | Protects `/api/cron/cleanup`. Vercel Cron sends it automatically. |
 | `RATE_LIMIT_SALT` | recommended | Salt for hashing IPs in the rate-limit table. |
 | `NEXT_PUBLIC_APP_URL` | no | Fallback base URL for invite links. |
+| `NEXT_PUBLIC_REALTIME` | no | Force the real-time transport: `pusher`, `sse` or `poll`. Default: Pusher if configured, else `poll` on Vercel, `sse` elsewhere. |
+| `SKIP_DB_MIGRATIONS` | no | `1` stops the Vercel build from running `drizzle-kit migrate`. |
 
 No secret is exposed to the browser: the database URL and Pusher secret are only read in server code (`src/db`, `src/lib/server`). Only `NEXT_PUBLIC_*` values reach the client.
 
@@ -111,10 +113,15 @@ Self-hosting instead? [Soketi](https://soketi.app) speaks the same protocol. Poi
 
 ## Deploying to Vercel
 
-1. Push this repo to GitHub and import it in Vercel (framework preset: Next.js).
-2. Add the environment variables above (Neon and Pusher are **required** on Vercel: the SSE fallback can't work across serverless instances).
-3. Run migrations against your Neon database once from your machine: `npm run db:migrate` (or add it to your CI).
-4. Deploy. `vercel.json` registers a daily cron for `/api/cron/cleanup`; set `CRON_SECRET` so it's authorized.
+1. Push this repo to GitHub and import it in Vercel (framework preset: Next.js; `vercel.json` sets it).
+2. Database: add the **Neon** integration from the Vercel Marketplace (it sets `DATABASE_URL` and `DATABASE_URL_UNPOOLED` for you), or paste your own Neon strings into the project's environment variables.
+3. Add `CRON_SECRET` and `RATE_LIMIT_SALT` (any long random strings). Optionally add the four Pusher variables.
+4. Deploy. The build command (`npm run vercel-build`) applies pending migrations from `drizzle/` before `next build`, so there is no manual migration step. Set `SKIP_DB_MIGRATIONS=1` for an environment that shouldn't migrate (for example previews that share the production database).
+5. `vercel.json` registers a daily cron for `/api/cron/cleanup`; Vercel sends `CRON_SECRET` automatically.
+
+**Real-time on Vercel.** With Pusher configured, updates are pushed instantly over WebSockets. Without Pusher, a Vercel build automatically switches to **polling**: each client checks a tiny `/api/rooms/:code/version` endpoint every 1.5s (10s while the tab is hidden) and fetches full state only when it changes. That works out of the box with just Neon, at the cost of slightly slower updates and more function invocations, so Pusher is still recommended for busy deployments. Override the choice with `NEXT_PUBLIC_REALTIME=pusher|sse|poll`. Changing Pusher or `NEXT_PUBLIC_*` variables requires a redeploy, since they're baked in at build time.
+
+Keep your Vercel function region close to your Neon region (Project → Settings → Functions) for snappier rounds.
 
 Other hosts: any Node.js host works. On a **single** long-running server (Fly, Railway, Render, a VPS) you can skip Pusher and use the SSE fallback; with multiple instances, configure Pusher.
 
@@ -211,4 +218,4 @@ tests/e2e/               Playwright multiplayer script and a mock Pusher server
 
 - **Neon**: create a project, set `DATABASE_URL` (+ `DATABASE_URL_UNPOOLED`), run `npm run db:migrate`.
 - **Pusher Channels**: create an app and set the four Pusher variables (required for Vercel or any multi-instance host).
-- **Vercel**: add the env vars and `CRON_SECRET`; the cleanup cron is already declared in `vercel.json`.
+- **Vercel**: add the env vars and `CRON_SECRET`; migrations run during the build and the cleanup cron is already declared in `vercel.json`.

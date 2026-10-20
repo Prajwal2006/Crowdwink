@@ -1,5 +1,6 @@
 "use client";
 
+import { api, ApiError } from "./api";
 import { credential, type Identity } from "./identity";
 
 export type ConnectionState = "connecting" | "live" | "offline";
@@ -10,14 +11,71 @@ export type RealtimeHandlers = {
   onState: (state: ConnectionState) => void;
 };
 
-export const realtimeProvider: "pusher" | "sse" = process.env.NEXT_PUBLIC_PUSHER_KEY ? "pusher" : "sse";
+/**
+ * - pusher: Pusher Channels (or a Pusher-compatible server). Best on any host.
+ * - sse:    in-process Server-Sent Events. Only works when ONE Node process serves everything.
+ * - poll:   short polling of a version number. Works anywhere, including serverless.
+ * Resolved at build time in next.config.ts (`NEXT_PUBLIC_REALTIME`).
+ */
+export type RealtimeProvider = "pusher" | "sse" | "poll";
+
+export const realtimeProvider: RealtimeProvider = (() => {
+  const configured = process.env.NEXT_PUBLIC_REALTIME;
+  if (configured === "pusher" || configured === "sse" || configured === "poll") return configured;
+  return process.env.NEXT_PUBLIC_PUSHER_KEY ? "pusher" : "sse";
+})();
 
 /**
  * Subscribes to a room's live channel. Messages only carry a version number; the
  * client then fetches its own authorized state. Returns an unsubscribe function.
  */
 export function connectRealtime(identity: Identity, handlers: RealtimeHandlers): () => void {
-  return realtimeProvider === "pusher" ? connectPusher(identity, handlers) : connectSse(identity, handlers);
+  if (realtimeProvider === "pusher") return connectPusher(identity, handlers);
+  if (realtimeProvider === "poll") return connectPoll(identity, handlers);
+  return connectSse(identity, handlers);
+}
+
+const POLL_MS = 1_500;
+const POLL_HIDDEN_MS = 10_000;
+
+function connectPoll(identity: Identity, h: RealtimeHandlers) {
+  let closed = false;
+  let timer: ReturnType<typeof setTimeout> | null = null;
+  let state: ConnectionState | null = null;
+
+  const setState = (next: ConnectionState) => {
+    if (next === state) return;
+    state = next;
+    h.onState(next);
+  };
+
+  const tick = async () => {
+    if (closed) return;
+    try {
+      const { v } = await api<{ v: number }>(`/api/rooms/${identity.code}/version`, { identity });
+      if (closed) return;
+      setState("live");
+      h.onSync(v);
+    } catch (err) {
+      if (closed) return;
+      if (err instanceof ApiError && err.status >= 400 && err.status < 500 && err.status !== 429) {
+        // Kicked, expired or signed out: let a full refresh surface the error, then stop.
+        h.onSync(Number.POSITIVE_INFINITY);
+        return;
+      }
+      setState("connecting");
+    }
+    const delay = document.visibilityState === "visible" ? POLL_MS : POLL_HIDDEN_MS;
+    timer = setTimeout(tick, delay);
+  };
+
+  setState("connecting");
+  void tick();
+
+  return () => {
+    closed = true;
+    if (timer) clearTimeout(timer);
+  };
 }
 
 function connectSse(identity: Identity, h: RealtimeHandlers) {
