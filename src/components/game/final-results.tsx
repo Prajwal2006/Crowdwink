@@ -6,6 +6,7 @@ import { useEffect } from "react";
 import { toast } from "sonner";
 import { Download, Home, LogOut, Play, Plus, Share2, Users } from "lucide-react";
 import { LogoMark } from "@/components/brand/logo";
+import { BuiltBy } from "@/components/home/developer-story";
 import { Button } from "@/components/ui/button";
 import type { LeaderboardRow, RoomView } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -102,6 +103,8 @@ export function FinalResults({ view, act, onLeave }: { view: RoomView; act: Act;
           </Button>
         </div>
       </section>
+
+      <BuiltBy className="opacity-80" />
 
       <BottomBar>
         {view.me.isHost ? (

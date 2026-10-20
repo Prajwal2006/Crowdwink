@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ArrowRight, Sparkles } from "lucide-react";
+import { DeveloperStory } from "@/components/home/developer-story";
 import { JoinCodeForm } from "@/components/home/join-code-form";
 import { SampleQuestion } from "@/components/home/sample-question";
 import { SiteFooter, SiteHeader } from "@/components/site-header";
@@ -158,6 +159,8 @@ export default function Home() {
             </Link>
           </Button>
         </section>
+
+        <DeveloperStory />
       </main>
       <SiteFooter />
     </>
